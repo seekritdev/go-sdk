@@ -160,7 +160,10 @@ func firstErr(errs ...error) error {
 // materialize decrypts every layer and merges by precedence. Layers arrive
 // lowest precedence first (composed groups, then the app environment); later
 // layers overwrite earlier ones on a name collision.
-func materialize(resp *resolveResponse, key *tokenKey) (map[string]string, error) {
+//
+// ${OTHER_SECRET} references are then expanded over the merged result (so a
+// reference sees whichever layer won the name), unless interpolate is false.
+func materialize(resp *resolveResponse, key *tokenKey, interpolate bool) (map[string]string, error) {
 	merged := make(map[string]string)
 	for _, layer := range resp.Layers {
 		dek, err := key.unwrapDEK(layer.WrappedDEK)
@@ -175,5 +178,12 @@ func materialize(resp *resolveResponse, key *tokenKey) (map[string]string, error
 			merged[s.Name] = value
 		}
 	}
-	return merged, nil
+	if !interpolate {
+		return merged, nil
+	}
+	expanded, err := InterpolateSecrets(merged)
+	if err != nil {
+		return nil, err
+	}
+	return expanded.Values, nil
 }

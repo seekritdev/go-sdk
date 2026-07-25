@@ -14,6 +14,27 @@ func (e *CryptoError) Error() string { return "seekrit: " + e.msg }
 
 func (e *CryptoError) Unwrap() error { return e.cause }
 
+// ReferenceErrorCode says why a ${OTHER_SECRET} reference could not be expanded.
+type ReferenceErrorCode string
+
+const (
+	// ReferenceCycle means the references form a loop.
+	ReferenceCycle ReferenceErrorCode = "CYCLE"
+	// ReferenceTooLarge means a value expands without bound.
+	ReferenceTooLarge ReferenceErrorCode = "TOO_LARGE"
+)
+
+// ReferenceError means a secret references another secret in a way that has no
+// answer: a cycle, or an expansion that grows without bound. An *unknown*
+// reference is not an error — it is left as literal text (see
+// InterpolateSecrets).
+type ReferenceError struct {
+	Code ReferenceErrorCode
+	msg  string
+}
+
+func (e *ReferenceError) Error() string { return "seekrit: " + e.msg }
+
 // APIError is returned when the resolve API responds with a non-2xx status.
 type APIError struct {
 	// Status is the HTTP status code.

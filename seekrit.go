@@ -53,21 +53,23 @@ type resolveResponse struct {
 // Client is a read-only seekrit client bound to one service token. It is safe
 // for concurrent use.
 type Client struct {
-	token      string
-	key        *tokenKey
-	apiURL     string
-	overrides  map[string]string
-	httpClient *http.Client
+	token       string
+	key         *tokenKey
+	apiURL      string
+	overrides   map[string]string
+	httpClient  *http.Client
+	interpolate bool
 }
 
 // Option configures a Client.
 type Option func(*config)
 
 type config struct {
-	token      string
-	apiURL     string
-	overrides  map[string]string
-	httpClient *http.Client
+	token       string
+	apiURL      string
+	overrides   map[string]string
+	httpClient  *http.Client
+	interpolate *bool
 }
 
 // WithToken sets the service token. Defaults to $SEEKRIT_TOKEN.
@@ -85,6 +87,13 @@ func WithOverrides(overrides map[string]string) Option {
 
 // WithHTTPClient sets a custom HTTP client (timeouts, proxies, transport).
 func WithHTTPClient(hc *http.Client) Option { return func(c *config) { c.httpClient = hc } }
+
+// WithInterpolate controls whether ${OTHER_SECRET} references in resolved
+// values are expanded. It defaults to true; pass false to get the stored text
+// verbatim.
+func WithInterpolate(interpolate bool) Option {
+	return func(c *config) { c.interpolate = &interpolate }
+}
 
 // New builds a Client, failing fast if no valid service token is available.
 func New(opts ...Option) (*Client, error) {
@@ -114,12 +123,17 @@ func New(opts ...Option) (*Client, error) {
 	if hc == nil {
 		hc = http.DefaultClient
 	}
+	interpolate := true
+	if cfg.interpolate != nil {
+		interpolate = *cfg.interpolate
+	}
 	return &Client{
-		token:      token,
-		key:        key,
-		apiURL:     strings.TrimRight(apiURL, "/"),
-		overrides:  cfg.overrides,
-		httpClient: hc,
+		token:       token,
+		key:         key,
+		apiURL:      strings.TrimRight(apiURL, "/"),
+		overrides:   cfg.overrides,
+		httpClient:  hc,
+		interpolate: interpolate,
 	}, nil
 }
 
@@ -131,7 +145,7 @@ func (c *Client) Resolve(ctx context.Context) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return materialize(resp, c.key)
+	return materialize(resp, c.key, c.interpolate)
 }
 
 // Get resolves and returns a single secret's value; ok is false if the name is

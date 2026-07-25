@@ -72,6 +72,19 @@ group.
 `Resolve` is **fail-closed**: any resolve or decrypt failure returns an error
 rather than partial results.
 
+## Secret references
+
+A secret's value may reference another with `${OTHER_SECRET}`. References are
+stored literally and expanded here, after the layers are merged — so a reference
+picks up whichever layer won that name, and rotating the referenced secret
+updates every value that uses it. `$${OTHER_SECRET}` is a literal; an unknown
+name is left as written; a reference cycle raises. Full rules:
+[seekrit.dev/docs/guides/references](https://seekrit.dev/docs/guides/references).
+
+```go
+client, err := seekrit.New(seekrit.WithInterpolate(false)) // stored text instead
+```
+
 ## Zero-knowledge
 
 `GET /v1/resolve` returns ciphertext plus a data-encryption key wrapped to your
