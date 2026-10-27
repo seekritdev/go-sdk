@@ -7,7 +7,7 @@
 //
 // Blob formats (all segments base64url, no padding):
 //
-//	token       skt_<id>_<pkcs8 private key>
+//	token       skt_<id>_v2.<auth secret>.<pkcs8 private key>
 //	wrapped DEK wd1.<ephemeral pub (raw SEC1)>.<hkdf salt>.<iv>.<ciphertext||tag>
 //	secret      sc1.<iv>.<ciphertext||tag>
 package seekrit
@@ -28,7 +28,17 @@ import (
 const hkdfInfo = "seekrit/wrap-dek/v1"
 
 // Only the first two underscores are separators; the key segment may contain "_".
-var tokenRE = regexp.MustCompile(`^(skt_[0-9A-Za-z]+)_([A-Za-z0-9_-]+)$`)
+// ServiceTokenAuth returns the auth component, never private-key material.
+func ServiceTokenAuth(token string) (string, error) {
+	m := serviceAuthRE.FindStringSubmatch(token)
+	if m == nil {
+		return "", &CryptoError{msg: "a v2 service token is required for API access; replace legacy tokens in the dashboard"}
+	}
+	return m[1], nil
+}
+
+var serviceAuthRE = regexp.MustCompile(`^(skt_[0-9A-Za-z]+_v2\.[A-Za-z0-9_-]{43})(?:\.[A-Za-z0-9_-]+)?$`)
+var tokenRE = regexp.MustCompile(`^(skt_[0-9A-Za-z]+)_(?:v2\.[A-Za-z0-9_-]{43}\.)?([A-Za-z0-9_-]+)$`)
 
 var b64 = base64.RawURLEncoding
 

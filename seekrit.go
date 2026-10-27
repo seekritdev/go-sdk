@@ -108,6 +108,10 @@ func New(opts ...Option) (*Client, error) {
 	if token == "" {
 		return nil, fmt.Errorf("seekrit: no service token: use WithToken or set SEEKRIT_TOKEN")
 	}
+	auth, err := ServiceTokenAuth(token)
+	if err != nil {
+		return nil, err
+	}
 	key, err := parseTokenKey(token)
 	if err != nil {
 		return nil, err
@@ -128,7 +132,7 @@ func New(opts ...Option) (*Client, error) {
 		interpolate = *cfg.interpolate
 	}
 	return &Client{
-		token:       token,
+		token:       auth,
 		key:         key,
 		apiURL:      strings.TrimRight(apiURL, "/"),
 		overrides:   cfg.overrides,
