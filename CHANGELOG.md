@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/mileszim/seekrit/compare/sdk-go-v0.6.0...sdk-go-v0.7.0) (2026-11-12)
+
+
+### Features
+
+* substitute placeholders inside Authorization: Basic credentials ([#593](https://github.com/mileszim/seekrit/issues/593)) ([b0cf4b6](https://github.com/mileszim/seekrit/commit/b0cf4b66dc23d365667a591664c5307088a1954a))
+
 ## [0.6.0](https://github.com/mileszim/seekrit/compare/sdk-go-v0.5.0...sdk-go-v0.6.0) (2026-11-11)
 
 
